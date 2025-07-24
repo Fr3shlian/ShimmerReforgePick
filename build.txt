@@ -1,0 +1,3 @@
+displayName = Shimmer Reforge Pick
+author = Fr3shlian
+version = 0.1
