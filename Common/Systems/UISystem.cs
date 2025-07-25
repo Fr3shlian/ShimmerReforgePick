@@ -85,10 +85,10 @@ namespace ShimmerReforgePick.Common.Systems {
                                 recipe = null;
                         }
 
+                        reforgePickUI.SetSelectedRecipe(recipe);
                         if (recipe == null) return;
 
                         reforgePickUI.SetPositionValues(num77, num78);
-                        reforgePickUI.SetSelectedRecipe(recipe);
                         ui.Draw(Main.spriteBatch, lastUpdateUiGameTime);
                     });
                 } else {
