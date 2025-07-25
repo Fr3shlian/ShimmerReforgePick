@@ -267,27 +267,47 @@ namespace ShimmerReforgePick.Common.Systems {
                 };
 
                 button.OnUpdate += (element) => {
-                    var el = (UITextPanel<string>)element;
                     if (desiredPrefix == i)
-                        el.BackgroundColor = lighterPanelColor;
-                    else if (!el.ContainsPoint(Main.MouseScreen)) el.BackgroundColor = basePanelColor;
+                        SetButtonColor(ref element, ColorContext.Selected);
+                    else if (!element.ContainsPoint(Main.MouseScreen))
+                        SetButtonColor(ref element, ColorContext.Default);
                 };
 
                 button.OnMouseOver += (evt, element) => {
                     SoundEngine.PlaySound(SoundID.MenuTick);
-                    var el = (UITextPanel<string>)element;
-                    el.BackgroundColor = lighterPanelColor;
+                    SetButtonColor(ref element, ColorContext.Hover);
                 };
 
-                button.OnMouseOut += (evt, element) => {
-                    var el = (UITextPanel<string>)element;
-                    el.BackgroundColor = basePanelColor;
-                };
+                button.OnMouseOut += (evt, element) => SetButtonColor(ref element, ColorContext.Default);
 
                 list.Add(button);
             }
 
             if (prefixList.Count != 0) desiredPrefix = prefixList[0];
+        }
+
+        private enum ColorContext {
+            Default,
+            Hover,
+            Selected
+        }
+
+        private void SetButtonColor(ref UIElement button, ColorContext context) {
+            var btn = (UITextPanel<string>)button;
+            switch (context) {
+                case ColorContext.Default:
+                    btn.BackgroundColor = basePanelColor;
+                    btn.BorderColor = Color.Black;
+                    break;
+                case ColorContext.Hover:
+                    btn.BackgroundColor = lighterPanelColor;
+                    btn.BorderColor = Color.Black;
+                    break;
+                case ColorContext.Selected:
+                    btn.BackgroundColor = lighterPanelColor;
+                    btn.BorderColor = Color.LightYellow;
+                    break;
+            }
         }
 
         private List<int> GetPrefixList() {
