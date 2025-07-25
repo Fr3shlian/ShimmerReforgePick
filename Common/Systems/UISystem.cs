@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Mono.Cecil.Cil;
@@ -10,6 +9,7 @@ using Terraria;
 using Terraria.Audio;
 using Terraria.GameContent;
 using Terraria.GameContent.UI.Elements;
+using Terraria.GameInput;
 using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.UI;
@@ -23,7 +23,7 @@ namespace ShimmerReforgePick.Common.Systems {
         public override void Load() {
             if (!Main.dedServ) {
                 IL_Main.DrawInventory += DrawReforgeUI;
-                On_Item.Prefix += PickReforge;
+                IL_Main.CraftItem += PickReforge;
 
                 ui = new UserInterface();
                 reforgePickUI = new ReforgePickUI();
@@ -32,10 +32,37 @@ namespace ShimmerReforgePick.Common.Systems {
             }
         }
 
-        private bool PickReforge(On_Item.orig_Prefix orig, Item self, int prefixWeWant) {
-            if (reforgePickUI.reforgeList.desiredPrefix != -1 && reforgePickUI.reforgeList.selectedRecipe != null) prefixWeWant = reforgePickUI.reforgeList.desiredPrefix;
+        private void PickReforge(ILContext il) {
+            try {
+                ILCursor c = new(il);
 
-            return orig(self, prefixWeWant);
+                if (c.TryGotoNext(
+                    i => i.OpCode == OpCodes.Ldc_I4_M1,
+                    i => i.MatchCallvirt(typeof(Item), "Prefix")
+                )) {
+                    c.Index++;
+
+                    c.EmitDelegate<Func<int, int>>((_) => {
+                        if (reforgePickUI.reforgeList.desiredPrefix != -1 && reforgePickUI.reforgeList.selectedRecipe != null) {
+                            if (Main.netMode == NetmodeID.SinglePlayer)
+                                return reforgePickUI.reforgeList.desiredPrefix;
+
+                            ModPacket packet = Mod.GetPacket();
+                            packet.Write((byte)Main.myPlayer);
+                            packet.Write((byte)reforgePickUI.reforgeList.desiredPrefix);
+                            packet.Send();
+
+                            return reforgePickUI.reforgeList.desiredPrefix;
+                        }
+
+                        return -1;
+                    });
+                } else {
+                    throw new Exception();
+                }
+            } catch {
+                MonoModHooks.DumpIL(ModContent.GetInstance<ShimmerReforgePick>(), il);
+            }
         }
 
         private void DrawReforgeUI(ILContext il) {
@@ -75,7 +102,6 @@ namespace ShimmerReforgePick.Common.Systems {
                 MonoModHooks.DumpIL(ModContent.GetInstance<ShimmerReforgePick>(), il);
             }
         }
-        
 
         public override void UpdateUI(GameTime gameTime) {
             lastUpdateUiGameTime = gameTime;
@@ -97,13 +123,21 @@ namespace ShimmerReforgePick.Common.Systems {
                 showList = !showList;
                 SoundEngine.PlaySound(SoundID.MenuTick);
             };
+            Append(button);
 
             reforgeList = new();
             reforgeList.Activate();
-
-            Append(button);
+            Append(reforgeList);
         }
 
+        public override void Update(GameTime gameTime) {
+            if (reforgeList.selectedRecipe == null || !showList || !Main.playerInventory || Main.recBigList) {
+                reforgeList.Deactivate();
+                RemoveChild(reforgeList);
+            }
+
+            base.Update(gameTime);
+        }
 
         protected override void DrawSelf(SpriteBatch spriteBatch) {
             button.SetImage(button.IsMouseHovering ? TextureAssets.Reforge[1] : TextureAssets.Reforge[0]);
@@ -111,10 +145,13 @@ namespace ShimmerReforgePick.Common.Systems {
             button.Left = new StyleDimension(num77 + 17, 0);
             button.Top = new StyleDimension(num78 - 15, 0);
 
-            RemoveChild(reforgeList);
-            if (showList) {
+            if (showList && !Main.recBigList) {
+                reforgeList.Activate();
                 Append(reforgeList);
             }
+
+            if (reforgeList.ContainsPoint(Main.MouseScreen) || button.ContainsPoint(Main.MouseScreen))
+                Main.LocalPlayer.mouseInterface = true;
         }
 
         internal void SetPositionValues(int num77, int num78) {
@@ -134,22 +171,22 @@ namespace ShimmerReforgePick.Common.Systems {
 
         private Vector2 offset;
         private bool dragging;
-        private Dictionary<int, string> prefixes = [];
 
         internal Item selectedRecipe;
         internal int lastSelectedRecipeType;
         internal int desiredPrefix = -1;
 
+        private static Color basePanelColor = new Color(63, 82, 151) * 0.8f;
+        private static Color lighterPanelColor = new Color(76, 99, 181) * 0.8f;
+
         public override void OnInitialize() {
             Width.Set(300, 0);
             Height.Set(400, 0);
-            //BorderColor = Color.HotPink;
-            //BackgroundColor = Color.LightPink;
             Left.Set(250, 0);
             Top.Set(315, 0);
 
             list = [];
-            list.Width.Set(-25f, 1f);
+            list.Width.Set(-30f, 1f);
             list.Height.Set(0, 1f);
             list.ListPadding = 5f;
             Append(list);
@@ -163,11 +200,15 @@ namespace ShimmerReforgePick.Common.Systems {
         }
 
         public override void LeftMouseDown(UIMouseEvent evt) {
+            if (list.ContainsPoint(Main.MouseScreen) || scrollbar.ContainsPoint(Main.MouseScreen))
+                return;
+
             offset = new Vector2(evt.MousePosition.X - Left.Pixels, evt.MousePosition.Y - Top.Pixels);
             dragging = true;
         }
 
         public override void LeftMouseUp(UIMouseEvent evt) {
+            if (!dragging) return;
             Vector2 end = evt.MousePosition;
             dragging = false;
 
@@ -187,6 +228,9 @@ namespace ShimmerReforgePick.Common.Systems {
             }
 
             base.DrawSelf(spriteBatch);
+
+            if (IsMouseHovering)
+                PlayerInput.LockVanillaMouseScroll("ShimmerReforgePick/ReforgePicker");
         }
 
         protected override void DrawChildren(SpriteBatch spriteBatch) {
@@ -200,16 +244,14 @@ namespace ShimmerReforgePick.Common.Systems {
 
             desiredPrefix = -1;
             list.Clear();
-            prefixes.Clear();
 
             List<int> prefixList = [];
             Dictionary<int, int> valueDict = [];
-            
+
 
             for (int i = 1; i < PrefixID.Search.Count; i++) {
                 if (selectedRecipe.CanApplyPrefix(i)) {
                     prefixList.Add(i);
-                    prefixes.Add(i, PrefixID.Search.GetName(i));
 
                     Item clone = selectedRecipe.Clone();
                     clone.Prefix(i);
@@ -225,16 +267,37 @@ namespace ShimmerReforgePick.Common.Systems {
             });
 
             foreach (int i in prefixList) {
-                string prefixName = prefixes[i];
-                UITextPanel<string> button = new(prefixName);
+                UITextPanel<string> button = new(Lang.prefix[i].Value);
                 button.Width.Set(0f, 1f);
                 button.Height.Set(20f, 0f);
+
                 button.OnLeftClick += (evt, element) => {
                     SoundEngine.PlaySound(SoundID.MenuTick);
                     desiredPrefix = i;
                 };
+
+                button.OnUpdate += (element) => {
+                    var el = (UITextPanel<string>)element;
+                    if (desiredPrefix == i)
+                        el.BackgroundColor = lighterPanelColor;
+                    else if (!el.ContainsPoint(Main.MouseScreen)) el.BackgroundColor = basePanelColor;
+                };
+
+                button.OnMouseOver += (evt, element) => {
+                    SoundEngine.PlaySound(SoundID.MenuTick);
+                    var el = (UITextPanel<string>)element;
+                    el.BackgroundColor = lighterPanelColor;
+                };
+
+                button.OnMouseOut += (evt, element) => {
+                    var el = (UITextPanel<string>)element;
+                    el.BackgroundColor = basePanelColor;
+                };
+
                 list.Add(button);
             }
+
+            desiredPrefix = prefixList[0];
         }
     }
 }
