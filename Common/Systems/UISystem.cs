@@ -24,12 +24,25 @@ namespace ShimmerReforgePick.Common.Systems {
             if (!Main.dedServ) {
                 IL_Main.DrawInventory += DrawReforgeUI;
                 IL_Main.CraftItem += PickReforge;
+                On_ItemSlot.MouseHover_ItemArray_int_int += ShowTheorheticalStats;
 
                 ui = new UserInterface();
                 reforgePickUI = new ReforgePickUI();
                 reforgePickUI.Activate();
                 ui.SetState(reforgePickUI);
             }
+        }
+
+        private void ShowTheorheticalStats(On_ItemSlot.orig_MouseHover_ItemArray_int_int orig, Item[] inv, int context, int slot) {
+            Item item = inv[slot];
+            int oldPrefix = item.prefix;
+            if (reforgePickUI.reforgeList.selectedRecipe?.type == item.type && reforgePickUI.reforgeList.desiredPrefix != -1) {
+                item.Prefix(reforgePickUI.reforgeList.desiredPrefix);
+            }
+
+            orig(inv, context, slot);
+
+            item.Prefix(oldPrefix);
         }
 
         private void PickReforge(ILContext il) {
@@ -85,7 +98,7 @@ namespace ShimmerReforgePick.Common.Systems {
                                 recipe = null;
                         }
 
-                        reforgePickUI.SetSelectedRecipe(recipe);
+                        reforgePickUI.reforgeList.selectedRecipe = recipe;
                         if (recipe == null) return;
 
                         reforgePickUI.SetPositionValues(num77, num78);
@@ -144,24 +157,20 @@ namespace ShimmerReforgePick.Common.Systems {
             button.Left = new StyleDimension(num77 + 17, 0);
             button.Top = new StyleDimension(num78 - 15, 0);
 
+            if (reforgeList.selectedRecipe != null) reforgeList.SetUIPrefixList();
             if (showList && !Main.recBigList) {
                 reforgeList.Activate();
                 Append(reforgeList);
-            }
 
-            //No using items while on the list or button
-            if (reforgeList.ContainsPoint(Main.MouseScreen) || button.ContainsPoint(Main.MouseScreen))
-                Main.LocalPlayer.mouseInterface = true;
+                //No using items while on the list or button
+                if (reforgeList.ContainsPoint(Main.MouseScreen) || button.ContainsPoint(Main.MouseScreen))
+                    Main.LocalPlayer.mouseInterface = true;
+            }
         }
 
         internal void SetPositionValues(int num77, int num78) {
             this.num77 = num77;
             this.num78 = num78;
-        }
-
-        internal void SetSelectedRecipe(Item item) {
-            if (reforgeList.selectedRecipe != null) reforgeList.lastSelectedRecipeType = reforgeList.selectedRecipe.type;
-            reforgeList.selectedRecipe = item;
         }
     }
 
@@ -171,6 +180,7 @@ namespace ShimmerReforgePick.Common.Systems {
 
         private Vector2 offset;
         private bool dragging;
+        private int currentItemType = -1;
 
         internal Item selectedRecipe;
         internal int lastSelectedRecipeType;
@@ -233,18 +243,13 @@ namespace ShimmerReforgePick.Common.Systems {
                 PlayerInput.LockVanillaMouseScroll("ShimmerReforgePick/ReforgePicker");
         }
 
-        protected override void DrawChildren(SpriteBatch spriteBatch) {
-            SetUIPrefixList();
+        internal void SetUIPrefixList() {
+            if (currentItemType == selectedRecipe.type) return;
 
-            base.DrawChildren(spriteBatch);
-        }
-
-        private void SetUIPrefixList() {
-            if (lastSelectedRecipeType == selectedRecipe.type && list.Count > 0) return;
+            currentItemType = selectedRecipe.type;
+            list.Clear();
 
             List<int> prefixList = GetPrefixList();
-
-            list.Clear();
 
             foreach (int i in prefixList) {
                 string name;
