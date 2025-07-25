@@ -244,8 +244,19 @@ namespace ShimmerReforgePick.Common.Systems {
             List<int> prefixList = [];
             Dictionary<int, int> valueDict = [];
 
+            for (int i = 1; i < PrefixID.Count; i++) {
+                if (selectedRecipe.CanApplyPrefix(i)) {
+                    prefixList.Add(i);
 
-            for (int i = 1; i < PrefixID.Search.Count; i++) {
+                    Item clone = selectedRecipe.Clone();
+                    clone.Prefix(i);
+                    int diff = clone.value - selectedRecipe.value;
+
+                    valueDict.Add(i, diff);
+                }
+            }
+
+            for (int i = PrefixID.Count + 1; i < PrefixLoader.PrefixCount; i++) {
                 if (selectedRecipe.CanApplyPrefix(i)) {
                     prefixList.Add(i);
 
@@ -263,7 +274,12 @@ namespace ShimmerReforgePick.Common.Systems {
             });
 
             foreach (int i in prefixList) {
-                UITextPanel<string> button = new(Lang.prefix[i].Value);
+                string name;
+
+                if (i < PrefixID.Count) name = Lang.prefix[i].Value;
+                else name = PrefixLoader.GetPrefix(i).DisplayName.Value;
+
+                UITextPanel<string> button = new(name);
                 button.Width.Set(0f, 1f);
                 button.Height.Set(20f, 0f);
 
