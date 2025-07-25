@@ -16,8 +16,8 @@ using Terraria.UI;
 
 namespace ShimmerReforgePick.Common.Systems {
     class UISystem : ModSystem {
-        internal UserInterface ui;
-        internal ReforgePickUI reforgePickUI;
+        private UserInterface ui;
+        private ReforgePickUI reforgePickUI;
         private GameTime lastUpdateUiGameTime;
 
         public override void Load() {
@@ -116,7 +116,10 @@ namespace ShimmerReforgePick.Common.Systems {
         public override void OnInitialize() {
             button = new(Asset<Texture2D>.Empty);
             button.OnLeftClick += (evt, listeningElement) => {
-                showList = !showList;
+                if (Main.recBigList) {
+                    Main.recBigList = false;
+                    showList = true;
+                } else showList = !showList;
                 SoundEngine.PlaySound(SoundID.MenuTick);
             };
             Append(button);
@@ -146,6 +149,7 @@ namespace ShimmerReforgePick.Common.Systems {
                 Append(reforgeList);
             }
 
+            //No using items while on the list or button
             if (reforgeList.ContainsPoint(Main.MouseScreen) || button.ContainsPoint(Main.MouseScreen))
                 Main.LocalPlayer.mouseInterface = true;
         }
@@ -182,7 +186,7 @@ namespace ShimmerReforgePick.Common.Systems {
             Top.Set(315, 0);
 
             list = [];
-            list.Width.Set(-30f, 1f);
+            list.Width.Set(-30f, 1f); //30 pixels for the scrollbar
             list.Height.Set(0, 1f);
             list.ListPadding = 5f;
             Append(list);
@@ -230,47 +234,17 @@ namespace ShimmerReforgePick.Common.Systems {
         }
 
         protected override void DrawChildren(SpriteBatch spriteBatch) {
-            SetPrefixList();
+            SetUIPrefixList();
 
             base.DrawChildren(spriteBatch);
         }
 
-        private void SetPrefixList() {
+        private void SetUIPrefixList() {
             if (lastSelectedRecipeType == selectedRecipe.type && list.Count > 0) return;
 
-            desiredPrefix = -1;
+            List<int> prefixList = GetPrefixList();
+
             list.Clear();
-
-            List<int> prefixList = [];
-            Dictionary<int, int> valueDict = [];
-
-            for (int i = 1; i < PrefixID.Count; i++) {
-                if (selectedRecipe.CanApplyPrefix(i)) {
-                    prefixList.Add(i);
-
-                    Item clone = selectedRecipe.Clone();
-                    clone.Prefix(i);
-                    int diff = clone.value - selectedRecipe.value;
-
-                    valueDict.Add(i, diff);
-                }
-            }
-
-            for (int i = PrefixID.Count + 1; i < PrefixLoader.PrefixCount; i++) {
-                if (selectedRecipe.CanApplyPrefix(i)) {
-                    prefixList.Add(i);
-
-                    Item clone = selectedRecipe.Clone();
-                    clone.Prefix(i);
-                    int diff = clone.value - selectedRecipe.value;
-
-                    valueDict.Add(i, diff);
-                }
-            }
-
-            prefixList.Sort((prefix1, prefix2) => {
-                return valueDict[prefix2].CompareTo(valueDict[prefix1]);
-            });
 
             foreach (int i in prefixList) {
                 string name;
@@ -308,7 +282,42 @@ namespace ShimmerReforgePick.Common.Systems {
                 list.Add(button);
             }
 
-            desiredPrefix = prefixList[0];
+            if (prefixList.Count != 0) desiredPrefix = prefixList[0];
+        }
+
+        private List<int> GetPrefixList() {
+            List<int> prefixList = [];
+            Dictionary<int, int> valueDict = [];
+
+            for (int i = 1; i < PrefixID.Count; i++) {
+                if (selectedRecipe.CanApplyPrefix(i)) {
+                    prefixList.Add(i);
+
+                    Item clone = selectedRecipe.Clone();
+                    clone.Prefix(i);
+                    int diff = clone.value - selectedRecipe.value;
+
+                    valueDict.Add(i, diff);
+                }
+            }
+
+            for (int i = PrefixID.Count + 1; i < PrefixLoader.PrefixCount; i++) {
+                if (selectedRecipe.CanApplyPrefix(i)) {
+                    prefixList.Add(i);
+
+                    Item clone = selectedRecipe.Clone();
+                    clone.Prefix(i);
+                    int diff = clone.value - selectedRecipe.value;
+
+                    valueDict.Add(i, diff);
+                }
+            }
+
+            prefixList.Sort((prefix1, prefix2) => {
+                return valueDict[prefix2].CompareTo(valueDict[prefix1]);
+            });
+
+            return prefixList;
         }
     }
 }
