@@ -269,8 +269,7 @@ namespace ShimmerReforgePick.Common.Systems {
             }
 
             prefixList.Sort((prefix1, prefix2) => {
-                if (valueDict[prefix1] > valueDict[prefix2]) return -1;
-                else return 1;
+                return valueDict[prefix2].CompareTo(valueDict[prefix1]);
             });
 
             foreach (int i in prefixList) {
