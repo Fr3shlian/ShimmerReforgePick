@@ -44,14 +44,6 @@ namespace ShimmerReforgePick.Common.Systems {
 
                     c.EmitDelegate<Func<int, int>>((_) => {
                         if (reforgePickUI.reforgeList.desiredPrefix != -1 && reforgePickUI.reforgeList.selectedRecipe != null) {
-                            if (Main.netMode == NetmodeID.SinglePlayer)
-                                return reforgePickUI.reforgeList.desiredPrefix;
-
-                            ModPacket packet = Mod.GetPacket();
-                            packet.Write((byte)Main.myPlayer);
-                            packet.Write((byte)reforgePickUI.reforgeList.desiredPrefix);
-                            packet.Send();
-
                             return reforgePickUI.reforgeList.desiredPrefix;
                         }
 
