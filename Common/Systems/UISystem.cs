@@ -135,6 +135,7 @@ namespace ShimmerReforgePick.Common.Systems {
                 } else showList = !showList;
                 SoundEngine.PlaySound(SoundID.MenuTick);
             };
+            button.Color = new Color(255, 127, 244);
             Append(button);
 
             reforgeList = new();
@@ -152,6 +153,7 @@ namespace ShimmerReforgePick.Common.Systems {
         }
 
         protected override void DrawSelf(SpriteBatch spriteBatch) {
+            if (button.IsMouseHovering) Main.instance.MouseText("Shimmer Reforge Pick");
             button.SetImage(button.IsMouseHovering ? TextureAssets.Reforge[1] : TextureAssets.Reforge[0]);
             //15 pixels fewer each since crafting toggle is drawn with its origin centered
             button.Left = new StyleDimension(num77 + 17, 0);
