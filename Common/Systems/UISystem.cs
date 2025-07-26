@@ -35,14 +35,17 @@ namespace ShimmerReforgePick.Common.Systems {
 
         private void ShowTheorheticalStats(On_ItemSlot.orig_MouseHover_ItemArray_int_int orig, Item[] inv, int context, int slot) {
             Item item = inv[slot];
-            int oldPrefix = item.prefix;
-            if (reforgePickUI.reforgeList.selectedRecipe?.type == item.type && reforgePickUI.reforgeList.desiredPrefix != -1) {
+
+            if (context == ItemSlot.Context.CraftingMaterial && reforgePickUI.reforgeList.selectedRecipe?.type == item.type && reforgePickUI.reforgeList.desiredPrefix != -1) {
+                Item noPrefix = item.Clone();
+
                 item.Prefix(reforgePickUI.reforgeList.desiredPrefix);
+
+                orig(inv, context, slot);
+                inv[slot] = noPrefix;
+            } else {
+                orig(inv, context, slot);
             }
-
-            orig(inv, context, slot);
-
-            item.Prefix(oldPrefix);
         }
 
         private void PickReforge(ILContext il) {
