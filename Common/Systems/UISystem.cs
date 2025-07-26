@@ -158,12 +158,16 @@ namespace ShimmerReforgePick.Common.Systems {
             button.Top = new StyleDimension(num78 - 15, 0);
 
             if (reforgeList.selectedRecipe != null) reforgeList.SetUIPrefixList();
+
+            if (button.ContainsPoint(Main.MouseScreen))
+                Main.LocalPlayer.mouseInterface = true;
+
             if (showList && !Main.recBigList) {
                 reforgeList.Activate();
                 Append(reforgeList);
 
-                //No using items while on the list or button
-                if (reforgeList.ContainsPoint(Main.MouseScreen) || button.ContainsPoint(Main.MouseScreen))
+                //No using items while on the active list
+                if (reforgeList.ContainsPoint(Main.MouseScreen))
                     Main.LocalPlayer.mouseInterface = true;
             }
         }
