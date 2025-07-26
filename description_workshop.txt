@@ -1,1 +1,9 @@
-This description will show up on the steam page, check out https://steamcommunity.com/comment/Guide/formattinghelp.
+Adds a button to your crafting interface for selecting the prefix of crafted items.
+
+The button will only show up if:
+[list]
+    [*] The item can have prefixes
+    [*] The item can be decrafted in shimmer
+    [*] You are close to shimmer
+[/list]
+Compatible with modded reforges (tested with the Thorium Mod)
