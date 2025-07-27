@@ -5,4 +5,4 @@ The button will only show up if:
 - The item can be decrafted in shimmer
 - You are close to shimmer
 
-Compatible with modded reforges (tested with the Thorium Mod)
+Compatible with modded prefixes (tested with the Thorium Mod)

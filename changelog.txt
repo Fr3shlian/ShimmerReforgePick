@@ -1,0 +1,4 @@
+[h1]v1.0.1
+[list]
+    [*] Fixed the UI showing up for most any modded item
+[/list]
