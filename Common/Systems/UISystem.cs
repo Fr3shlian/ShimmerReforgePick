@@ -93,7 +93,7 @@ namespace ShimmerReforgePick.Common.Systems {
                             int recipeIndex = Main.availableRecipe[Main.focusRecipe];
                             recipe = Main.recipe[recipeIndex].createItem;
 
-                            bool canHavePrefixes = recipe.CanHavePrefixes() || (recipe.ModItem != null && ItemLoader.CanReforge(recipe));
+                            bool canHavePrefixes = recipe.CanHavePrefixes();
                             int shimmerEquivalentType = ItemID.Sets.ShimmerCountsAsItem[recipe.type] != -1 ? ItemID.Sets.ShimmerCountsAsItem[recipe.type] : recipe.type;
                             bool canBeDecrafted = !ShimmerTransforms.IsItemTransformLocked(shimmerEquivalentType);
 
