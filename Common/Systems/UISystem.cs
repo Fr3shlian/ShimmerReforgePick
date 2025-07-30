@@ -216,6 +216,7 @@ namespace ShimmerReforgePick.Common.Systems {
             scrollbar.Height.Set(0f, 1f);
             Append(scrollbar);
             list.SetScrollbar(scrollbar);
+            list.ManualSortMethod = (e) => { };
         }
 
         public override void LeftMouseDown(UIMouseEvent evt) {
