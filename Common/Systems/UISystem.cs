@@ -330,21 +330,18 @@ namespace ShimmerReforgePick.Common.Systems {
 
                     Item clone = selectedRecipe.Clone();
                     clone.Prefix(i);
-                    int diff = clone.value - selectedRecipe.value;
-
-                    valueDict.Add(i, diff);
+                    valueDict.Add(i, clone.value);
                 }
             }
 
+            //PrefixID.Count + 1 is necessary due to empty space in the list
             for (int i = PrefixID.Count + 1; i < PrefixLoader.PrefixCount; i++) {
                 if (selectedRecipe.CanApplyPrefix(i)) {
                     prefixList.Add(i);
 
                     Item clone = selectedRecipe.Clone();
                     clone.Prefix(i);
-                    int diff = clone.value - selectedRecipe.value;
-
-                    valueDict.Add(i, diff);
+                    valueDict.Add(i, clone.value);
                 }
             }
 
