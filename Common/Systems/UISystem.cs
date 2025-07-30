@@ -330,9 +330,7 @@ namespace ShimmerReforgePick.Common.Systems {
 
                     Item clone = selectedRecipe.Clone();
                     clone.Prefix(i);
-                    int diff = clone.value - selectedRecipe.value;
-
-                    valueDict.Add(i, diff);
+                    valueDict.Add(i, clone.value);
                 }
             }
 
@@ -342,9 +340,7 @@ namespace ShimmerReforgePick.Common.Systems {
 
                     Item clone = selectedRecipe.Clone();
                     clone.Prefix(i);
-                    int diff = clone.value - selectedRecipe.value;
-
-                    valueDict.Add(i, diff);
+                    valueDict.Add(i, clone.value);
                 }
             }
 
