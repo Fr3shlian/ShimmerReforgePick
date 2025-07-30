@@ -1,4 +1,4 @@
-[h1]v1.0.1
+[h1]v1.0.2
 [list]
-    [*] Fixed the UI showing up for most any modded item
+    [*] Fixed inconsistent sorting
 [/list]
